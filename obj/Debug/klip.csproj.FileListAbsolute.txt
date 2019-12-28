@@ -1,0 +1,15 @@
+D:\workspaces\csharp_workspace\klip\bin\Debug\klip.exe.config
+D:\workspaces\csharp_workspace\klip\bin\Debug\klip.exe
+D:\workspaces\csharp_workspace\klip\bin\Debug\klip.pdb
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.csprojAssemblyReference.cache
+D:\workspaces\csharp_workspace\klip\obj\Debug\MainWindow.g.cs
+D:\workspaces\csharp_workspace\klip\obj\Debug\App.g.cs
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip_MarkupCompile.cache
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip_MarkupCompile.lref
+D:\workspaces\csharp_workspace\klip\obj\Debug\MainWindow.baml
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.g.resources
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.Properties.Resources.resources
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.csproj.GenerateResource.cache
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.csproj.CoreCompileInputs.cache
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.exe
+D:\workspaces\csharp_workspace\klip\obj\Debug\klip.pdb
