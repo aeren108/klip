@@ -13,7 +13,11 @@
             <ListBoxItem Content="2" FontSize="18"/>
             <ListBoxItem Content="3" FontSize="18"/>
             <ListBoxItem Content="4" FontSize="18"/>
-            <ListBoxItem Content="5" FontSize="18"/> 
+            <ListBoxItem Content="5" FontSize="18"/>
+            <ListBoxItem Content="6" FontSize="18"/>
+            <ListBoxItem Content="7" FontSize="18"/>
+            <ListBoxItem Content="8" FontSize="18"/>
+            <ListBoxItem Content="9" FontSize="18"/>
         </ListBox>
     </Grid>
 </Window>

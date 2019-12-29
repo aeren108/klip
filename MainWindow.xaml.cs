@@ -1,17 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 
@@ -29,19 +18,20 @@ namespace klip {
         const int KEY_Z = 0x5A;
         const int KEY_C = 0x43;
 
+        const int MAX_COPY = 8;
+
         
         int index = 0;
-        bool isSetByUser = false;
+        string clipboardSet = "";
 
         public MainWindow() {
             InitializeComponent();
-            
         }
 
         protected override void OnSourceInitialized(EventArgs e) {
             WindowInteropHelper wih = new WindowInteropHelper(this);
             hwndSource = HwndSource.FromHwnd(wih.Handle);
-            hwndSource.AddHook(WinProc);
+            hwndSource.AddHook(WndProc);
 
             AddClipboardFormatListener(hwndSource.Handle);
             RegisterHotKey(hwndSource.Handle, 1, MOD_ALT | MOD_CONTROL, KEY_Z);
@@ -50,36 +40,18 @@ namespace klip {
             base.OnSourceInitialized(e);
         }
 
-        private IntPtr WinProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
             switch (msg) {
                 case WM_CLIPBOARDUPDATE:
 
-                    if (!isSetByUser) {
-                        string clipText = Clipboard.GetText();
-                        
-                        //TODO: Handle duplicates
-                        foreach (object item in list.Items) {
-                            if (item == null) {
-                                Console.WriteLine("Null çıktı rıza baba");
-                            } if (item is ListBoxItem) {
-                                ListBoxItem lbi = item as ListBoxItem;
-                                Console.WriteLine(lbi.Content.ToString());
-                                if (lbi.Content.ToString().Equals(clipText)) {
-                                    Console.WriteLine("Found duplicate");
-                                    return IntPtr.Zero;
-                                }
-                            } else if (item is string){
-                                if (item.Equals(clipText)) {
-                                    return IntPtr.Zero;
-                                }
-                            }
-                        }
+                    string clipText = GetClipboardText();
 
-                        list.Items.Insert(0, new ListViewItem().Content = Clipboard.GetText());
-                        list.Items.RemoveAt(list.Items.Count - 1);
+                    if (LookForDuplicates(clipText))
+                        return IntPtr.Zero;
 
-                    } else
-                        isSetByUser = false;
+                    index = 0;
+
+                    AddItem(clipText);
 
                     break;
 
@@ -88,41 +60,76 @@ namespace klip {
                     break;
                 case WM_HOTKEY:
                     int id = wParam.ToInt32();
-                    if (id == 1) {
-                        if (index < 4)
+                    if (id == 1) { // KEY Z is pressed
+                        if (index < MAX_COPY)
                             index++;
 
-                        object item = list.Items.GetItemAt(index);
-                        string itemText = "";
-
-                        if (item is string)
-                            itemText = item as string;
-                        else if (item is ListBoxItem)
-                            itemText = ((ListBoxItem) item).Content.ToString();
-
-                        isSetByUser = true;
-                        Clipboard.SetText(itemText);
-                        
-                    } else if (id == 2) {
+                        SetClipboard(index);
+                    } else if (id == 2) { //KEY C is pressed
                         if (index > 0)
                             index--;
 
-                        object item = list.Items.GetItemAt(index);
-                        string itemText = "";
-
-                        if (item is string)
-                            itemText = item as string;
-                        else if (item is ListBoxItem)
-                            itemText = ((ListBoxItem) item).Content.ToString();
-
-                        isSetByUser = true;
-                        Clipboard.SetText(itemText);
-
+                        SetClipboard(index);
                     }
                     break;
             }
 
             return IntPtr.Zero;
+        }
+
+        private void AddItem(string text) {
+            list.Items.Insert(0, new ListViewItem().Content = text);
+            list.Items.RemoveAt(list.Items.Count - 1);
+        }
+
+        private void SetClipboard(int index) {
+            object item = list.Items.GetItemAt(index);
+
+            if (item is string) {
+                string itemText = item as string;
+                clipboardSet = itemText;
+                Clipboard.SetText(itemText);
+            }
+        }
+
+        private bool LookForDuplicates(string clipText) {
+            foreach (object item in list.Items) {
+                if (item is string) {
+                    if (clipText.Equals(item as string)) {
+                        //User copied something same as in the list
+                        if (!clipboardSet.Equals(item as string)) {
+                            //This means that user updated clipboard
+                            //Move it to the top of list
+                            list.Items.Remove(item);
+                            list.Items.Insert(0, item);
+                        }
+                        
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private string GetClipboardText() {
+            string strClipboard = string.Empty;
+
+            //Try ten times to get clipboard text
+            for (int i = 0; i < 10; i++) {
+                try {
+                    strClipboard = Clipboard.GetText(TextDataFormat.UnicodeText);
+                    return strClipboard;
+                } catch (COMException ex) {
+                    //if you try to get clipboard text so many times this exception will be thrown
+                    if (ex.ErrorCode == -2147221040) // Wait some time and try to get clipboard text in next loop
+                        System.Threading.Thread.Sleep(10);
+                    else
+                        throw new Exception("Unable to get Clipboard text.");
+                }
+            }
+
+            return strClipboard;
         }
 
 
