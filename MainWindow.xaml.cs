@@ -10,15 +10,19 @@ namespace klip {
 
         //See for clipboard notification constants: https://docs.microsoft.com/tr-tr/windows/win32/dataxchg/clipboard-notifications
         //See for keyboard input reference: https://docs.microsoft.com/tr-tr/windows/win32/inputdev/keyboard-input-reference
-        const int WM_DRAWCLIPBOARD = 0x308;
         const int WM_CLIPBOARDUPDATE = 0x031D;
         const int WM_HOTKEY = 0x0312;
+
         const int MOD_ALT = 0x0001;
         const int MOD_CONTROL = 0x0002;
+
         const int KEY_Z = 0x5A;
         const int KEY_C = 0x43;
 
-        const int MAX_COPY = 8;
+        const int ID_Z = 1;
+        const int ID_C = 2;
+
+        const int MAX_COPY = 10;
 
         
         int index = 0;
@@ -26,6 +30,7 @@ namespace klip {
 
         public MainWindow() {
             InitializeComponent();
+            list.SelectedItem = list.Items[index];
         }
 
         protected override void OnSourceInitialized(EventArgs e) {
@@ -34,8 +39,8 @@ namespace klip {
             hwndSource.AddHook(WndProc);
 
             AddClipboardFormatListener(hwndSource.Handle);
-            RegisterHotKey(hwndSource.Handle, 1, MOD_ALT | MOD_CONTROL, KEY_Z);
-            RegisterHotKey(hwndSource.Handle, 2, MOD_ALT | MOD_CONTROL, KEY_C);
+            RegisterHotKey(hwndSource.Handle, ID_Z, MOD_ALT | MOD_CONTROL, KEY_Z);
+            RegisterHotKey(hwndSource.Handle, ID_C, MOD_ALT | MOD_CONTROL, KEY_C);
 
             base.OnSourceInitialized(e);
         }
@@ -43,32 +48,30 @@ namespace klip {
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
             switch (msg) {
                 case WM_CLIPBOARDUPDATE:
+                    //For now only texts
+                    if (Clipboard.ContainsText()) { 
+                        string clipText = GetClipboardText();
+                        if (LookForDuplicates(clipText)) //If there is a duplicate do nothing
+                            return IntPtr.Zero;
 
-                    string clipText = GetClipboardText();
+                        index = 0;
+                        AddItem(clipText);
+                    }
 
-                    if (LookForDuplicates(clipText))
-                        return IntPtr.Zero;
-
-                    index = 0;
-
-                    AddItem(clipText);
-
-                    break;
-
-                case WM_DRAWCLIPBOARD:
-                    
                     break;
                 case WM_HOTKEY:
                     int id = wParam.ToInt32();
-                    if (id == 1) { // KEY Z is pressed
-                        if (index < MAX_COPY)
+                    if (id == ID_Z) { //KEY Z is pressed
+                        if (index < MAX_COPY - 1)
                             index++;
 
+                        list.SelectedItem = list.Items[index];
                         SetClipboard(index);
-                    } else if (id == 2) { //KEY C is pressed
+                    } else if (id == ID_C) { //KEY C is pressed
                         if (index > 0)
                             index--;
 
+                        list.SelectedItem = list.Items[index];
                         SetClipboard(index);
                     }
                     break;
@@ -112,6 +115,8 @@ namespace klip {
             return false;
         }
 
+      
+        //If user attempts to accesing clipboard so many times, COMException will be thrown.
         private string GetClipboardText() {
             string strClipboard = string.Empty;
 
@@ -121,8 +126,8 @@ namespace klip {
                     strClipboard = Clipboard.GetText(TextDataFormat.UnicodeText);
                     return strClipboard;
                 } catch (COMException ex) {
-                    //if you try to get clipboard text so many times this exception will be thrown
-                    if (ex.ErrorCode == -2147221040) // Wait some time and try to get clipboard text in next loop
+                    // Wait some time and try to get clipboard text in next loop
+                    if (ex.ErrorCode == -2147221040) 
                         System.Threading.Thread.Sleep(10);
                     else
                         throw new Exception("Unable to get Clipboard text.");
